@@ -1,1 +1,255 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外贸报价计算器</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 30px 16px;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  background: #f3f6fb;
+  color: #243247;
+}
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+header { margin-bottom: 25px; }
+header h1 { margin-bottom: 8px; color: #17365d; }
+header p { color: #718096; }
+.panel {
+  background: white;
+  border-radius: 14px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 15px rgba(0,0,0,.05);
+}
+h2 { font-size: 19px; margin-top: 0; }
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.field input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d5deea;
+  border-radius: 7px;
+  font-size: 16px;
+}
+.field input:focus {
+  outline: 2px solid #9bc2fa;
+  border-color: #377bd6;
+}
+.buttons { display: flex; gap: 12px; margin-top: 22px; }
+button {
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.calculate { background: #2463bd; color: white; }
+.reset { background: #e9eef5; color: #34445b; }
+.results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+.result {
+  background: #f4f7fc;
+  padding: 18px;
+  border-radius: 10px;
+}
+.result span { color: #6b7a90; font-size: 13px; }
+.result strong {
+  display: block;
+  margin-top: 9px;
+  font-size: 23px;
+  color: #173f79;
+  overflow-wrap: anywhere;
+}
+.highlight { background: #eaf3ff; }
+.note { color: #78869a; font-size: 12px; line-height: 1.7; }
+.error { color: #c0392b; margin-top: 12px; }
+@media(max-width:600px) {
+  .fields, .results { grid-template-columns: 1fr; }
+  .panel { padding: 18px; }
+  .buttons button { flex: 1; padding: 12px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>📊 外贸报价计算器</h1>
+  <p>Foreign Trade Quotation Calculator</p>
+  <p>快速计算 FOB 报价、订单成本及利润</p>
+</header>
+
+<section class="panel">
+<h2>一、报价基础信息</h2>
+<div class="fields">
+  <div class="field">
+    <label>产品名称</label>
+    <input id="product" type="text" value="Hinged Knee Brace">
+  </div>
+  <div class="field">
+    <label>产品采购成本（人民币/件）</label>
+    <input id="cost" type="number" min="0" step="0.01" value="34.50">
+  </div>
+  <div class="field">
+    <label>订单数量（件）</label>
+    <input id="qty" type="number" min="1" step="1" value="500">
+  </div>
+  <div class="field">
+    <label>汇率（人民币/美元）</label>
+    <input id="rate" type="number" min="0.0001" step="0.0001" value="6.90">
+  </div>
+  <div class="field">
+    <label>FOB 费用（人民币总额）</label>
+    <input id="fees" type="number" min="0" step="0.01" value="500">
+  </div>
+  <div class="field">
+    <label>目标利润率（%）</label>
+    <input id="margin" type="number" min="0" max="99.99" step="0.01" value="20">
+  </div>
+</div>
+<div class="buttons">
+  <button class="calculate" onclick="calculate()">计算报价</button>
+  <button class="reset" onclick="resetForm()">清空数据</button>
+</div>
+<div id="error" class="error"></div>
+</section>
+
+<section class="panel">
+<h2>二、报价计算结果</h2>
+<div class="results">
+  <div class="result">
+    <span>产品采购总成本（RMB）</span>
+    <strong id="purchaseTotal">¥0.00</strong>
+  </div>
+  <div class="result">
+    <span>FOB 费用分摊（RMB/件）</span>
+    <strong id="feeUnit">¥0.00</strong>
+  </div>
+  <div class="result">
+    <span>订单总成本（RMB）</span>
+    <strong id="totalCost">¥0.00</strong>
+  </div>
+  <div class="result">
+    <span>实际成本（RMB/件）</span>
+    <strong id="unitCost">¥0.00</strong>
+  </div>
+  <div class="result highlight">
+    <span>FOB 报价（USD/件）</span>
+    <strong id="unitPrice">$0.00</strong>
+  </div>
+  <div class="result highlight">
+    <span>FOB 总报价（USD）</span>
+    <strong id="totalPrice">$0.00</strong>
+  </div>
+  <div class="result">
+    <span>预计订单利润（RMB）</span>
+    <strong id="profitRmb">¥0.00</strong>
+  </div>
+  <div class="result">
+    <span>预计订单利润（USD）</span>
+    <strong id="profitUsd">$0.00</strong>
+  </div>
+</div>
+<p class="note" id="summary">填写数据后，点击计算报价查看结果。</p>
+</section>
+
+<p class="note">
+说明：采购成本按人民币/件填写；FOB费用填写整笔订单的人民币费用。
+目标利润率按销售收入计算，而不是成本加成率。
+本工具为估算工具，实际报价请核实运费、报关费及其他费用。
+</p>
+</div>
+
+<script>
+function money(value, symbol) {
+  return symbol + value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function calculate() {
+  const product = document.getElementById("product").value.trim();
+  const cost = Number(document.getElementById("cost").value);
+  const qty = Number(document.getElementById("qty").value);
+  const rate = Number(document.getElementById("rate").value);
+  const fees = Number(document.getElementById("fees").value);
+  const margin = Number(document.getElementById("margin").value) / 100;
+  const error = document.getElementById("error");
+
+  error.textContent = "";
+
+  if (!product || !Number.isFinite(cost) || cost < 0 ||
+      !Number.isInteger(qty) || qty <= 0 ||
+      !Number.isFinite(rate) || rate <= 0 ||
+      !Number.isFinite(fees) || fees < 0 ||
+      !Number.isFinite(margin) || margin < 0 || margin >= 1) {
+    error.textContent = "请检查输入：数量必须是正整数，汇率必须大于零，利润率必须在0%至99.99%之间。";
+    return;
+  }
+
+  const purchaseTotal = cost * qty;
+  const totalCost = purchaseTotal + fees;
+  const unitCost = totalCost / qty;
+  const totalRevenueRmb = totalCost / (1 - margin);
+  const profitRmb = totalRevenueRmb - totalCost;
+  const totalPrice = totalRevenueRmb / rate;
+  const unitPrice = totalPrice / qty;
+
+  document.getElementById("purchaseTotal").textContent = money(purchaseTotal, "¥");
+  document.getElementById("feeUnit").textContent = money(fees / qty, "¥");
+  document.getElementById("totalCost").textContent = money(totalCost, "¥");
+  document.getElementById("unitCost").textContent = money(unitCost, "¥");
+  document.getElementById("unitPrice").textContent = money(unitPrice, "$");
+  document.getElementById("totalPrice").textContent = money(totalPrice, "$");
+  document.getElementById("profitRmb").textContent = money(profitRmb, "¥");
+  document.getElementById("profitUsd").textContent = money(profitRmb / rate, "$");
+
+  document.getElementById("summary").textContent =
+    "产品：" + product + "。订单数量：" + qty +
+    " 件。目标利润率：" + (margin * 100).toFixed(2) +
+    "%。以上结果根据当前输入自动计算。";
+}
+
+function resetForm() {
+  document.getElementById("product").value = "";
+  document.getElementById("cost").value = "";
+  document.getElementById("qty").value = "";
+  document.getElementById("rate").value = "";
+  document.getElementById("fees").value = "";
+  document.getElementById("margin").value = "";
+  document.getElementById("error").textContent = "";
+  document.getElementById("summary").textContent =
+    "填写数据后，点击计算报价查看结果。";
+
+  ["purchaseTotal","feeUnit","totalCost","unitCost",
+   "unitPrice","totalPrice","profitRmb","profitUsd"]
+   .forEach(id => {
+     document.getElementById(id).textContent =
+       id.includes("Price") || id === "profitUsd" ? "$0.00" : "¥0.00";
+   });
+}
+
+calculate();
+</script>
+</body>
+</html>
+
